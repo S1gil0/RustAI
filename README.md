@@ -47,6 +47,6 @@ Users receive confirmation messages and the plugin automatically saves the updat
 Feel free to try it, comment and suggest ideas for it.
 
 
-Example configuration:
+
  
 
