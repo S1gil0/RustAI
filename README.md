@@ -1,3 +1,5 @@
+![pop](https://i.postimg.cc/sDXbw8Ph/rustai.jpg)
+
 # RustAI
 The RustAI plugin integrates AI generative models into Rust servers, supporting both Text Generation WebUI for custom local models and OpenAI models, simultaneously.
 Admins can switch between models using a command or via the configuration file. The plugin includes per-user and global cooldowns to prevent spam and/or overwhelming the model
