@@ -50,17 +50,3 @@ Feel free to try it, comment and suggest ideas for it.
 Example configuration:
  
 
-{
-  "OpenAIApiURL": "https://api.openai.com/v1/chat/completions",
-  "TextGenerationApiUrl": "http://144.144.144.144:5000/v1/completions",
-  "ActivationKeyword": "!ai",
-  "UserCooldownInSeconds": 30.0,
-  "GlobalCooldownInSeconds": 10.0,
-  "SystemPrompt": "You are a rust server assistant.",
-  "ModelType": "openai",
-  "OpenAI_API_Key": "OpenAI API Key Here",
-  "ModelName": "gpt-3.5-turbo",
-  "MaxTokens": 100,
-  "Temperature": 1.2
-}
- 
