@@ -1,4 +1,4 @@
-![pop](https://i.postimg.cc/sDXbw8Ph/rustai.jpg)
+![pop](rustai.jpg)
 
 # RustAI
 The RustAI Oxide plugin integrates AI generative models into Rust servers, supporting both Text Generation WebUI for custom local models and OpenAI models, simultaneously.
