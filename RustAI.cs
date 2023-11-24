@@ -36,6 +36,7 @@ namespace Oxide.Plugins
             public string ModelName { get; set; }
             public int MaxTokens { get; set; }
             public double Temperature { get; set; }
+            public string Character { get; set; }
 
             public static PluginConfig DefaultConfig()
             {
@@ -51,7 +52,8 @@ namespace Oxide.Plugins
                     OpenAI_API_Key = "",
                     ModelName = "gpt-3.5-turbo",
                     MaxTokens = 100,
-                    Temperature = 1.2
+                    Temperature = 1.2,
+                    Character = "Example"
                 };
             }
         }
@@ -214,7 +216,13 @@ namespace Oxide.Plugins
 
                 var payload = new
                 {
-                    prompt = _config.SystemPrompt + " " + prompt,
+                    messages = new[]
+                    {
+                        new {role = "system", content = _config.SystemPrompt},
+                        new {role = "user", content = prompt}
+                    },
+                    mode = "chat",
+                    character = _config.Character,
                     max_tokens = _config.MaxTokens,
                     temperature = _config.Temperature
                 };
@@ -245,7 +253,7 @@ namespace Oxide.Plugins
 
                         if (responseObject.choices != null && responseObject.choices.Length > 0)
                         {
-                            string responseContent = responseObject.choices[0].text;
+                            string responseContent = responseObject.choices[0].message.content;
                             if (!string.IsNullOrEmpty(responseContent))
                             {
                                 responseContent = Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(responseContent));
@@ -253,7 +261,7 @@ namespace Oxide.Plugins
                             }
                             else
                             {
-                                Puts("Error: responseObject.choices[0].text is null or empty");
+                                Puts("Error: responseObject.choices[0].message.content is null or empty");
                             }
                         }
                         else
