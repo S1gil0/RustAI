@@ -185,7 +185,7 @@ namespace Oxide.Plugins
                 asyncOp.completed += _ => tcs.SetResult(true);
                 await tcs.Task;
 
-                if (request.isNetworkError || request.isHttpError)
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.Log(request.error);
                 }
@@ -242,7 +242,7 @@ namespace Oxide.Plugins
                 asyncOp.completed += _ => tcs.SetResult(true);
                 await tcs.Task;
 
-                if (request.isNetworkError || request.isHttpError)
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
                 {
                     Debug.Log(request.error);
                 }
@@ -252,7 +252,7 @@ namespace Oxide.Plugins
                     var responseObject = JsonConvert.DeserializeObject<Response>(responseContent);
 
                     if (responseObject.choices != null && responseObject.choices.Length > 0)
-                                       {
+                    {
                         string chatMessage = responseObject.choices[0].message.content;
                         player.ChatMessage(chatMessage);
                     }
