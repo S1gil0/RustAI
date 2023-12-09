@@ -197,7 +197,7 @@ namespace Oxide.Plugins
                     if (responseObject.choices != null && responseObject.choices.Length > 0)
                     {
                         string chatMessage = responseObject.choices[0].message.content;
-                        player.ChatMessage(chatMessage);
+                        PrintToChat(chatMessage);
                     }
                 }
             }
@@ -254,7 +254,7 @@ namespace Oxide.Plugins
                     if (responseObject.choices != null && responseObject.choices.Length > 0)
                     {
                         string chatMessage = responseObject.choices[0].message.content;
-                        player.ChatMessage(chatMessage);
+                        PrintToChat(chatMessage);
                     }
                 }
             }
