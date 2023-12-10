@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Rust;
 using UnityEngine;
@@ -10,7 +11,7 @@ using System.Text;
 
 namespace Oxide.Plugins
 {
-    [Info("RustAI", "Sigilo", "1.0.0")]
+    [Info("RustAI", "Sigilo", "1.0.2")]
     class RustAI : RustPlugin
     {
         private PluginConfig _config { get; set; }
@@ -24,7 +25,7 @@ namespace Oxide.Plugins
         {
             public string OpenAIApiURL { get; set; }
             public string TextGenerationApiUrl { get; set; }
-            public string ActivationKeyword { get; set; }
+            public List<string> ActivationKeywords { get; set; }
             public float UserCooldownInSeconds { get; set; }
             public float GlobalCooldownInSeconds { get; set; }
             public string SystemPrompt { get; set; }
@@ -34,6 +35,8 @@ namespace Oxide.Plugins
             public int MaxTokens { get; set; }
             public double Temperature { get; set; }
             public string Character { get; set; }
+            public string DiscordWebhookURL { get; set; }
+            public bool SendCooldownMessages { get; set; }
 
             public static PluginConfig DefaultConfig()
             {
@@ -41,16 +44,18 @@ namespace Oxide.Plugins
                 {
                     OpenAIApiURL = "https://api.openai.com/v1/chat/completions",
                     TextGenerationApiUrl = "http://0.0.0.0:5000/v1/chat/completions",
-                    ActivationKeyword = "!ai",
+                    ActivationKeywords = new List<string> { "wipe", "admin" },
+                    SystemPrompt = "Keep responses short. Wipe days: Thursdays at 4 PM. Discord: discord.gg/yourdiscord",
+                    OpenAI_API_Key = "your openai api key here",
+                    DiscordWebhookURL = "your discord webhook here",
                     UserCooldownInSeconds = 30.0f,
                     GlobalCooldownInSeconds = 10.0f,
-                    SystemPrompt = "You are a helpful assistant.",
                     ModelType = "openai",
-                    OpenAI_API_Key = "",
                     ModelName = "gpt-3.5-turbo",
                     MaxTokens = 100,
                     Temperature = 0.9,
-                    Character = "Assistant"
+                    Character = "Assistant",
+                    SendCooldownMessages = true
                 };
             }
         }
@@ -96,6 +101,10 @@ namespace Oxide.Plugins
             }
 
             _config = Config.ReadObject<PluginConfig>();
+            if (_config.ActivationKeywords == null)
+            {
+                _config.ActivationKeywords = new List<string>();
+            }
         }
 
         protected override void LoadDefaultConfig()
@@ -109,18 +118,24 @@ namespace Oxide.Plugins
             return hasPermission;
         }
 
-        private void OnPlayerChat(BasePlayer player, string message)
+        private void OnPlayerChat(BasePlayer player, string message, ConVar.Chat.ChatChannel channel)
         {
-            if (message.StartsWith(_config.ActivationKeyword) && HasPermission(player))
+            if (channel != ConVar.Chat.ChatChannel.Team)
             {
-                if (!HasCooldownElapsed(player))
+                if (HasPermission(player))
                 {
-                    return;
+                    if (_config.ActivationKeywords.Any(keyword => message.ToLower().Contains(keyword.ToLower())))
+                    {
+                        if (!HasCooldownElapsed(player))
+                        {
+                            return;
+                        }
+
+                        string prompt = System.Net.WebUtility.UrlEncode(message.Trim());
+
+                        GenerateTextAsync(player, prompt);
+                    }
                 }
-
-                string prompt = System.Net.WebUtility.UrlEncode(message.Substring(_config.ActivationKeyword.Length).Trim());
-
-                GenerateTextAsync(player, prompt);
             }
         }
 
@@ -136,14 +151,20 @@ namespace Oxide.Plugins
                 if (userElapsedTime < _config.UserCooldownInSeconds)
                 {
                     int timeLeft = Mathf.FloorToInt(_config.UserCooldownInSeconds - userElapsedTime);
-                    player.ChatMessage($"You must wait <color=green>{timeLeft}</color> seconds before using the command again.");
+                    if (_config.SendCooldownMessages)
+                    {
+                        player.ChatMessage($"You must wait <color=green>{timeLeft}</color> seconds before asking again.");
+                    }
                     return false;
                 }
 
                 if (globalElapsedTime < _config.GlobalCooldownInSeconds)
                 {
                     int timeLeft = Mathf.FloorToInt(_config.GlobalCooldownInSeconds - globalElapsedTime);
-                    player.ChatMessage($"Everyone must wait <color=green>{timeLeft}</color> seconds before using the command again.");
+                    if (_config.SendCooldownMessages)
+                    {
+                        player.ChatMessage($"Everyone must wait <color=green>{timeLeft}</color> seconds before asking again.");
+                    }
                     return false;
                 }
             }
@@ -198,13 +219,13 @@ namespace Oxide.Plugins
                     {
                         string chatMessage = responseObject.choices[0].message.content;
                         PrintToChat(chatMessage);
+
+                        await SendToDiscordWebhook(player, prompt, chatMessage);
                     }
                 }
             }
             else if (_config.ModelType == "textgeneration")
             {
-                Puts("Text generation started");
-
                 if (string.IsNullOrEmpty(prompt))
                 {
                     prompt = "Hello";
@@ -255,8 +276,50 @@ namespace Oxide.Plugins
                     {
                         string chatMessage = responseObject.choices[0].message.content;
                         PrintToChat(chatMessage);
+
+                        await SendToDiscordWebhook(player, prompt, chatMessage);
                     }
                 }
+            }
+        }
+
+        private async Task SendToDiscordWebhook(BasePlayer player, string userMessage, string botReply)
+        {
+            string webhookUrl = _config.DiscordWebhookURL;
+            string serverName = ConVar.Server.hostname;
+
+            var payload = new
+            {
+                embeds = new[]
+                {
+                    new
+                    {
+                        title = $"**{serverName}**",
+                        description = $"User Message: {userMessage}\nBot Response: {botReply}",
+                        fields = new[]
+                        {
+                            new { name = "User", value = $"[{player.displayName}](<https://steamcommunity.com/profiles/{player.UserIDString}>) | {player.UserIDString}" }
+                        }
+                    }
+                }
+            };
+
+            var jsonPayload = JsonConvert.SerializeObject(payload);
+            var request = new UnityWebRequest(webhookUrl, "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
+            request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            var asyncOp = request.SendWebRequest();
+
+            var tcs = new TaskCompletionSource<bool>();
+            asyncOp.completed += _ => tcs.SetResult(true);
+            await tcs.Task;
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                Debug.Log(request.error);
             }
         }
 
@@ -284,3 +347,4 @@ namespace Oxide.Plugins
         }
     }
 }
+

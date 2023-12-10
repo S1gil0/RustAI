@@ -21,4 +21,4 @@ This End-User License Agreement (EULA) governs the use of the software ("Softwar
 5. Copyright:
    5.1. Copyright © 2023 Sigilo. All rights reserved.
 
-This EULA is effective as of November 2023 and may be updated by the Developer at their discretion. It is your responsibility to review and comply with the latest version of this agreement.
+This EULA is effective as of December 2023 and may be updated by the Developer at their discretion. It is your responsibility to review and comply with the latest version of this agreement.
