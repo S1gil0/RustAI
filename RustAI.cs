@@ -11,7 +11,7 @@ using System.Text;
 
 namespace Oxide.Plugins
 {
-    [Info("RustAI", "Sigilo", "1.0.2")]
+    [Info("RustAI", "Sigilo", "1.0.3")]
     class RustAI : RustPlugin
     {
         private PluginConfig _config { get; set; }
@@ -177,12 +177,8 @@ namespace Oxide.Plugins
         public async void GenerateTextAsync(BasePlayer player, string prompt)
         {
             string apiUrl = _config.ModelType == "openai" ? _config.OpenAIApiURL : _config.TextGenerationApiUrl;
-
-            // Get the current date and time
             string currentDate = DateTime.Now.ToString("dd/MM/yyyy");
             string currentTime = DateTime.Now.ToString("HH:mm");
-
-            // Include the date and time in the user's message
             string userMessage = $"{prompt} The current date is {currentDate} and the current time is {currentTime}.";
 
             if (_config.ModelType == "openai")
