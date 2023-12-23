@@ -282,6 +282,9 @@ namespace Oxide.Plugins
             string webhookUrl = _config.DiscordWebhookURL;
             string serverName = ConVar.Server.hostname;
 
+            // Decode the userMessage from URL format
+            string decodedUserMessage = System.Net.WebUtility.UrlDecode(userMessage);
+
             var payload = new
             {
                 embeds = new[]
@@ -289,7 +292,7 @@ namespace Oxide.Plugins
                     new
                     {
                         title = $"**{serverName}**",
-                        description = $"User Message: {userMessage}\nBot Response: {botReply}",
+                        description = $"User Message: {decodedUserMessage}\nBot Response: {botReply}",
                         fields = new[]
                         {
                             new { name = "User", value = $"[{player.displayName}](<https://steamcommunity.com/profiles/{player.UserIDString}>) | {player.UserIDString}" }
