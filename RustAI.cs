@@ -178,6 +178,13 @@ namespace Oxide.Plugins
         {
             string apiUrl = _config.ModelType == "openai" ? _config.OpenAIApiURL : _config.TextGenerationApiUrl;
 
+            // Get the current date and time
+            string currentDate = DateTime.Now.ToString("dd/MM/yyyy");
+            string currentTime = DateTime.Now.ToString("HH:mm");
+
+            // Include the date and time in the user's message
+            string userMessage = $"{prompt} The current date is {currentDate} and the current time is {currentTime}.";
+
             if (_config.ModelType == "openai")
             {
                 var payload = new
@@ -185,7 +192,7 @@ namespace Oxide.Plugins
                     messages = new[]
                     {
                         new {role = "system", content = _config.SystemPrompt},
-                        new {role = "user", content = string.IsNullOrEmpty(prompt) ? "Hello" : prompt}
+                        new {role = "user", content = userMessage}
                     },
                     model = _config.ModelName,
                     max_tokens = _config.MaxTokens,
@@ -226,16 +233,7 @@ namespace Oxide.Plugins
             }
             else if (_config.ModelType == "textgeneration")
             {
-                if (string.IsNullOrEmpty(prompt))
-                {
-                    prompt = "Hello";
-                }
-                else
-                {
-                    prompt = System.Net.WebUtility.UrlDecode(prompt);
-                }
-
-                string messageContent = _config.SystemPrompt + " " + prompt;
+                string messageContent = _config.SystemPrompt + " " + userMessage;
 
                 var payload = new
                 {
@@ -347,4 +345,3 @@ namespace Oxide.Plugins
         }
     }
 }
-
